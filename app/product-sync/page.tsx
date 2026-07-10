@@ -53,6 +53,20 @@ export default function ProductSyncPage() {
     return 'pending';
   }
 
+  function buildSyncPayload(p: Product) {
+    return {
+      item_id: p.id,
+      name: p.name,
+      sku: p.sku,
+      description: p.description,
+      price: p.price,
+      stock: p.stock,
+      unit: p.unit,
+      item_category: p.item_category,
+      show_on_website: p.show_on_website ?? p.showOnWebsite,
+    };
+  }
+
   async function syncOne(id:string) {
     if (isSyncing) return alert('Full sync in progress');
     const p = products.find(pt => String(pt.id) === String(id));
@@ -61,7 +75,7 @@ export default function ProductSyncPage() {
       console.log('syncing', p);
       const res = await fetch('/api/sync-inventory-images', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ item_id: p.id, name: p.name, sku: p.sku, description: p.description, price: p.price, stock: p.stock, unit: p.unit, item_category: p.item_category })
+        body: JSON.stringify(buildSyncPayload(p))
       });
       const data = await res.json();
       if (data.status === 'success' || data.status === 'already_synced') {
@@ -87,7 +101,7 @@ export default function ProductSyncPage() {
     for (const p of toSync) {
       setProgress(pr => ({ ...pr, label: `Syncing ${p.name}` }));
       try {
-        const res = await fetch('/api/sync-inventory-images', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ item_id: p.id, name: p.name, sku: p.sku, description: p.description, price: p.price, stock: p.stock, unit: p.unit, item_category: p.item_category }) });
+        const res = await fetch('/api/sync-inventory-images', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(buildSyncPayload(p)) });
         const data = await res.json();
         if (data.status === 'success' || data.status === 'already_synced') {
           setImageMap(m => ({ ...m, [String(p.id)]: { file_id: data.file_id, synced: true } }));
